@@ -15,7 +15,7 @@
 *                                                        *
 *********** 2021-02-25 ** Richard Krejstrup **************/
 
-/* Assignment 2 - Hangman.
+/* Assignment 2 - Hangman. And with somewhat of sarcasm ;)
  * Rules :
  * Player has 10 times to guess on the word.
  * o Player can have two types of guesses:
@@ -32,24 +32,25 @@
  * Must have:
  *  o The secret word should be randomly chosen from an array   | Check
  *    of Strings.
- *  o The incorrect letters the player has guessed, should be   | ?
+ *  o The incorrect letters the player has guessed, should be   | Check
  *    put inside a StringBuilder and presented to the player
  *    after each guess.
- *  o The correct letters should be put inside a char array.    | ?
+ *  o The correct letters should be put inside a char array.    | Check
  *    Unrevealed letters need to be represented by a lower 
  *    dash ( _ ).
- *    
+ *
  * Optional:
- *  o You unit tests need to have at least 50% coverage.        | ?
- *  o Read in the words from a text file with Comma-separated   | kind of (file)
- *    values and then store them in an array or list of Strings.
- * 
+ *  o Your unit tests need to have at least 50% coverage.       | Naaahh
+ *  o Read in the words from a text file with Comma-separated   | Kind of:
+ *    values and then store them in an array or list of Strings. Loads from file
+ *
  *===| 
- *   O
+ *   O  Die allready!
  *  /|\
  *  / \
  *  
  */
+
 
 using System;
 using System.IO;
@@ -61,170 +62,212 @@ namespace Assignment2Hangman
     {
         static void Main(string[] args)
         {
-            int numberOfGuesses = 0;
-            int numberOfMisses  = 0;
-            int numberOfRights  = 0;
- 
             string[] setOfDifferentWords = null;
             Random aRandomObject = new Random();
-            char userGameTypeChar;
-            char[] userGuessedChars = new char[12]; // Just a start, will build up if nessesary
+            StringBuilder sbUserFailGuessedString = new StringBuilder(" ", 15);
             GetWordsFromFile(ref setOfDifferentWords);
-
+            StringBuilder sbGameWord = null;
+            string inputUserGuessString;
+            bool userShotForWord = false;
+            char inputUserGuessChar = 'A';
+            bool keepGameAlive = true;
+            bool userWonGame = false;
+            bool newGame = true;
+            char[] caHiddenWord = null;
+            bool isThisTypedBefore;
 
             // If loopin the game restart from here===============================
-            DrawMenu(true);
-            string gameWord = setOfDifferentWords[aRandomObject.Next(0, setOfDifferentWords.Length)];   // pick one of all words
-            StringBuilder sbGameWord = new StringBuilder(gameWord);
-            StringBuilder sbHiddenWord = new StringBuilder();
-
-            //Console.WriteLine(gameWord); // Test-cheater!! :O
-
-            do  // let the user decide what type of a game we are to play letter or word
+            do  //======KeepGameAlive
             {
-                userGameTypeChar = UserInputChar("Enter type of game [l/w]: ");
+                int numberOfGuesses = 0;
+                int numberOfMisses  = 0;
+                int numberOfRights  = 0;
+                sbUserFailGuessedString.Clear();
+                userWonGame = false;
+                userShotForWord = false;
 
-            } while ((userGameTypeChar != 'l') && (userGameTypeChar != 'w'));
-
-            //============== Below here is the game of pick a letter ======= (Word further down)
-
-            if (userGameTypeChar == 'l')
-            {
-                bool isThisTypedBefore = false;
-                char userGuess;
-                Console.WriteLine("Ok - we will play for the letter then.");
-
-                try
+                do  //=== DID I WIN 
                 {
-                    do      // Kepp the game alive in this loop
-                    {
-                        do  // A lot has been removed and this is left - ask for a guess.
-                        {
-                            isThisTypedBefore = false;
-                            userGuess = UserInputChar("\nPick a letter: "); //========< Stops For User Input]
-                            if (Array.Exists(userGuessedChars, element => element == userGuess))// Ok, I walked into a Lamda expression here
-                            {
-                                isThisTypedBefore = true;
-                                Console.WriteLine("No, you allready typed {0} before. ", userGuess);
-                            }
 
-                        } while (isThisTypedBefore);
-                        if (userGuessedChars.Length == numberOfGuesses)
-                            Array.Resize(ref userGuessedChars, userGuessedChars.Length + 1);
-                        userGuessedChars[numberOfGuesses++] = userGuess;
-
-                        // --- Guess input ended. Rewrite menu ithems ---------------
-                        Console.Clear();
-                        DrawMenu();
-
-                        Console.Write("Number of guessed so far: {0} \nAnd letters you have tried so far: ", numberOfGuesses.ToString());
-                        foreach (char buppEliBupp in userGuessedChars)
-                        {
-                            Console.Write(" " + buppEliBupp);
-                        }
-
-
-                        // ---------- Building underscore word: ---------------
-                        bool jackPot = false;
-                        numberOfRights = 0;
-                        sbHiddenWord.Clear();   // erase the text to restart
-                        for ( int myLoop = 0; myLoop < sbGameWord.Length; myLoop++) // === Start making hidden fields
-                        {
-                            jackPot = false;
-                            foreach (char inputChars in userGuessedChars)
-                            {
-                                if (gameWord[myLoop] == inputChars)
-                                {
-                                    // this position in string has a good letter
-                                    sbHiddenWord.Append(inputChars);
-                                    sbHiddenWord.Append(' ');
-                                    jackPot = true;
-                                    numberOfRights++;
-                                }
-                            }
-                            if (!jackPot) sbHiddenWord.Append("_ ");
-                        }
-                        //blippedGameWord = babbelByxa.ToString();
-
-
-                        Console.WriteLine("\nWill you solve this: [{0}] \n", sbHiddenWord.ToString());
-
-                        if (!  sbGameWord.ToString().Contains(userGuess.ToString()))
-                            numberOfMisses++;
-                        PlayerHangMan(numberOfMisses); // have no idea if it was right or not (yet)
-
-                    } while ((numberOfMisses < 10)&&(numberOfRights!=sbGameWord.Length));
 
                     Console.Clear();
                     DrawMenu();
-                    Console.WriteLine("Okej GG, the word was: " + sbGameWord.ToString());
-                    if (numberOfMisses > 9) Console.WriteLine("\nBUT YOU TOTALLY DIED DUDE!");
 
-                } catch (Exception eh)
-                {
-                    Console.WriteLine(eh.ToString());
-                }
-                
+                    if (newGame)    // Prepping for a new game. Use this newGame-bool to show or hide texts and others.
+                    {
+                        // ToCome:== Pick a gameWord from >word pool< then claim and fill memory of array for hidden representation
 
-            }
-            else // ======== Alternative game with Words starts here ================
-            {
+                        sbGameWord = new StringBuilder(setOfDifferentWords[aRandomObject.Next(0, setOfDifferentWords.Length)]);
+                        caHiddenWord = new char[sbGameWord.Length];
+                        for (int myLoop = 0; myLoop < caHiddenWord.Length; myLoop++) caHiddenWord[myLoop] = '_';
+                        Console.WriteLine("Allright kids > new game of Hang That Man!");
+                    }
+                        // ToCome:== Set up game area
+
+                    Console.Write(  "The word length is   : " + sbGameWord.Length);
+                    Console.Write("\nThe guess word a.t.m : "); // and the "___" text will come here.
+
+                    foreach (char aChar in caHiddenWord)    
+                    {
+                        Console.Write(aChar.ToString());
+                    }
+                    
+                    if (!newGame) Console.Write("\nYour previous guesses are: {0}\n", sbUserFailGuessedString.ToString());
+
+                    PlayerHangMan(numberOfGuesses);
+                    if (!newGame) Console.Write("\nSee - you'r soon dead as a rock! {0}/10", numberOfGuesses);
+
+
+                    // ToCome:======= User Guesses and inputs Word or Letter ========
+
+                    do //reapeat this input-section if [isThisTypedBefore] :
+                    {
+                        isThisTypedBefore = false;
+                        inputUserGuessString = UserInput("\nTake a guess for full word, or a letter: ", sbGameWord.Length); //======< Stops For User Input]
+
+                        // the first character from the user input string if not a try for the whole word
+                        if (inputUserGuessString.Length != sbGameWord.Length)
+                        {
+                            inputUserGuessChar = inputUserGuessString[0];
+
+                            //TEST HERE - IF PREVIOUSLY GUESSED SAME LETTER
+                            if ( GuessedThisBefore(caHiddenWord, sbUserFailGuessedString, inputUserGuessChar) ) isThisTypedBefore = true;
+                            if (isThisTypedBefore) Console.Write("What? Noo... you've tried that before");
+
+
+                        }
+                        else// If User choose to take a shot for the whole word - this has to be handled separately
+                        {   // None of the characters can be taken to account for the FailGuess-list or correct word (rules!)
+                            userShotForWord = true;
+
+                            if (sbGameWord.Equals(inputUserGuessString))
+                            {
+                                userWonGame = true;
+                                numberOfRights++;
+                            }
+                            else // if test fails its a miss and we put the first letter to 
+                            {
+                                numberOfMisses++;
+                            }
+
+                        }
+                    } while (isThisTypedBefore);
+
+
+                    // ToCome:======= Test the letter-guess for Good or Bad Guess. NOT IF WORD WAS GUESSED!!
+                    if (!userShotForWord)
+                    {
+
+                        if (sbGameWord.ToString().Contains(inputUserGuessChar))
+                        {
+                            //We got at hit
+                            PutInRight(ref caHiddenWord, inputUserGuessChar, sbGameWord.ToString());
+                            numberOfRights++;
+                        }
+                        else
+                        {
+                            PutInWrong(ref sbUserFailGuessedString, inputUserGuessChar);
+                            numberOfMisses++;
+                        }
+                    }
+                    else userShotForWord = false;
+
+                    numberOfGuesses++;
+
+
+
+                    if (newGame) newGame = false;
+
+                } while ((numberOfGuesses < 10) && (!userWonGame));
+                // ===DID I WIN - End of Game-while ------------------------------------------
+
+
                 Console.Clear();
-                DrawMenu();
-                Console.WriteLine("\nOk - we will play for the whole word then.");
-                Console.WriteLine("I have totally picked a new word.");
+                Console.WriteLine("*********** Statistics ***********");
+                Console.WriteLine("* Number of tries: {0}      \t *", numberOfGuesses);
+                Console.WriteLine("* Number of miss : {0}         \t *", numberOfMisses);
+                Console.WriteLine("* Number of hits : {0}         \t *", numberOfRights);
+                Console.WriteLine("* Random Word :{0}       \t *", sbGameWord.ToString());
+                Console.WriteLine("* {0}         ", userWonGame ? "And You Won!!\t\t\t *\n" : "And You LOST!!\t\t *\n");
+                Console.WriteLine("***********************************");
+                if (!userWonGame) PlayerHangMan(10);
 
-                do // Do the tricks in here
+                string userEndAnswer=null;
+                do
                 {
-                    Console.Write("The picked word is {0} letter long. Take a guess: ", gameWord.Length);
-                    StringBuilder userInputLine = new StringBuilder(Console.ReadLine());
-                    if (userInputLine.Length > sbGameWord.Length)
-                    {
-                        Console.Write("What? No - that's to big.");
-                    } else if (userInputLine.Length < sbGameWord.Length) 
-                    {
-                        Console.Write("What? No - that's to small.");
-                    } else
-                    {
-                        Console.Write("Ok, good guess. ");
-                    }
-
-                    if (sbGameWord.Equals(userInputLine))
-                    {
-                        Console.WriteLine("WHAT? Are you kidding me? That's the right word!");
-                        Console.WriteLine("Now - Fuck off!");
-                        Environment.Exit(0);
-                    }
+                    userEndAnswer = UserInput("\nDo you you want to play again? [y/n]", 1);
+                } while (!userEndAnswer.Contains('Y') && !userEndAnswer.Contains('N'));
+                if (userEndAnswer.Contains('N')) keepGameAlive = false;
+                if (userEndAnswer.Contains('Y')) newGame = true;
 
 
+            } while (keepGameAlive);    //======KeepGameAlive
 
+            Console.Clear();
+            Console.WriteLine("\nAllright then - You sore looser - BYE!!\n\n\n\n\n\n");
 
-
-
-
-
-                } while (true);
-
-            }
-
-            Console.WriteLine("Do you you want to play again?");
-            Console.ReadLine();
-            Console.WriteLine("Nah, just kidding - you'r to bad\n\n\n\n");
         }   // == End of Main() ------------------------------------------------
 
 
- 
+        /// <summary>
+        /// PutInWrong just inserts a wrong letter last in the string.
+        /// </summary>
+        /// <param name="theWrongString">The string that contains the bad guesses.</param>
+        /// <param name="userInput">The letter that the user took a guess on.</param>
+        static void PutInWrong(ref StringBuilder theWrongString, char userInput)
+        {
+            // Vi kollar inte om tecknet redan finns
+            // kolla om det ska in i StringBuilder först
+            theWrongString.Append(userInput);
+        }
+        /// <summary>
+        /// PutInRight is using parameters to put the right letter in the right spot. Only 4 of same letters are put in.
+        /// </summary>
+        /// <param name="theRightArray">Input a ref til a char[] array. With a lot of '_'.</param>
+        /// <param name="userInput">The character that was input from user, aka the guess.</param>
+        /// <param name="gameRightWord">the string of the right word.</param>
+        /// <returns>If all letters are at place we got a win and return true.</returns>
+        static bool PutInRight(ref char[] theRightArray, char userInput, string gameRightWord)
+        {
+            // Vi kollar inte om tecknet redan finns
+            // kolla om det ska in i StringBuilder först
+            int rightPosition = gameRightWord.IndexOf(userInput);
+            theRightArray[rightPosition] = userInput;
 
-        static void DrawMenu(bool startUp=false)
+            //--- There could be more of this letter in the word, check for that----------
+            rightPosition = gameRightWord.IndexOf(userInput, rightPosition + 1);
+            if (rightPosition > -1)
+            {
+                theRightArray[rightPosition] = userInput;
+                rightPosition = gameRightWord.IndexOf(userInput, rightPosition + 1);
+                if (rightPosition > -1)  // get in here if there's a third match
+                {
+                    rightPosition = gameRightWord.IndexOf(userInput, rightPosition + 1);
+                    if (rightPosition > -1) theRightArray[rightPosition] = userInput;
+                }
+            }
+
+            int countTheEmty = 0;
+            foreach (char loopingCharacter in theRightArray)
+            {
+                if (loopingCharacter == '_') countTheEmty++;
+            }
+            if (countTheEmty == 0) return true;   // returnera true om vi vann! För helt ord testar vi hela ordet direkt!
+            return false;
+        }
+
+
+        static void DrawMenu()
         {
             // Just draw the headline of the game.
-            Console.WriteLine(             "**************************************");
-            Console.WriteLine(             "*    Welcome to the hangman show!    *");
-            Console.WriteLine(             "*  I'll pick a word, and you'll      *");
-            Console.WriteLine(             "*    guess what it is.               *");
-            if (startUp) Console.WriteLine("*  Do you want to guess a (w)ord     *");
-            if (startUp) Console.WriteLine("*    or (l)etters?                   *");
-            Console.WriteLine(             "****   You'll hang by 10 misses!  ****\n");
+            Console.WriteLine("__________Krajan greets you___________");
+            Console.WriteLine("|    Welcome to the Hang Man Show!   |");
+            Console.WriteLine("|  I'll pick a word, and you'll      |");
+            Console.WriteLine("|    guess what it is.               |");
+            Console.WriteLine("|  Write a whole word or just guess  |");
+            Console.WriteLine("| a letters.  You'll hang after      |");
+            Console.WriteLine("|  just 10 chances!                  |");
+            Console.WriteLine("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
         } // End of Method DrawMenu() -------------------------------------------
 
@@ -247,7 +290,7 @@ namespace Assignment2Hangman
                     
                     while ((myStreamReaderString = myFilestream.ReadLine()) != null)    // I sometimes forget that the '=' operator returns the same value as the others.
                     {
-                        myStreamReaderString = myStreamReaderString.ToLower();  // only use low key characters
+                            myStreamReaderString = myStreamReaderString.ToUpper();  // only use low key characters
                         // Insert myStreamReaderString into end of theWordArray[]
                         if (theWordArray == null)
                         {
@@ -272,18 +315,28 @@ namespace Assignment2Hangman
         } // End of Method GetWordsFromFile() -----------------------------
 
 
-        static char UserInputChar(string textMessage)
+        static string UserInput(string textMessage, int wordLetterExact)
         {
-            // just get a valid character from user
+            // just get a string or valid character from user
             
             while (true)
             {
                 Console.Write(textMessage);
                 try
                 {
-                    string userInput = Console.ReadLine();
-                    char userInputChar = userInput[0];  // I'll just snatch the first character!
-                    if (Char.IsLetter(userInputChar)) return userInputChar;
+                    string userInput;
+                    do
+                    {
+                        userInput = Console.ReadLine();
+                    } while (userInput.Length < 0);
+                    if (userInput.Length != wordLetterExact)
+                    {
+                        char userInputChar = userInput[0];  // I'll just snatch the first character!
+                        if (Char.IsLetter(userInputChar)) return (userInputChar.ToString()).ToUpper();
+                    } else
+                    {
+                        return userInput.ToUpper();
+                    }
                 }
                 catch (Exception theException)
                 {
@@ -291,11 +344,31 @@ namespace Assignment2Hangman
                     Console.WriteLine("Exception: UserInputChar()");
                     Console.WriteLine(theException.ToString());
                     Console.ResetColor();
-                    return '0';
+                    return null;
                 }
             }
 
         }// End of Method UserInputChar() -------------------------------------
+
+        /// <summary>
+        /// GuessedThisBefore() just checkes if the user has tried this guess before.
+        /// </summary>
+        /// <param name="theRightOnes">The Array of chars that we should test through.</param>
+        /// <param name="theWrongOnes">The StringBuilder of what we should test through.</param>
+        /// <param name="theUserGuess">The guessing letter.</param>
+        /// <returns></returns>
+        static bool GuessedThisBefore(char[] theRightOnes, StringBuilder theWrongOnes, char theUserGuess)
+        {
+
+            foreach (char aCharSelect in theRightOnes)
+            {
+                if (aCharSelect == theUserGuess) return true;
+            }
+
+            if (theWrongOnes.ToString().Contains(theUserGuess)) return true;
+
+            return false;
+        }
 
 
         static void PlayerHangMan(int nrWrongGuess)
@@ -306,9 +379,13 @@ namespace Assignment2Hangman
                 int[] screenManPositions = { 1, 2, 3, 4, 9, 13, 14, 15, 19, 22 };
                 nrWrongGuess--;
 
-                Console.WriteLine(screenMan.Remove(screenManPositions[nrWrongGuess]));
+                Console.WriteLine("\n" + screenMan.Remove(screenManPositions[nrWrongGuess]));
             }
-
+            else
+            {
+                Console.Write("\n\n\n");    // leave area for Batman!
+            }
+           
         }// End of Method PlayerHangMan() -------------------------------------
 
 
